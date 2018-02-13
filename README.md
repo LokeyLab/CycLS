@@ -3,14 +3,12 @@ CycLS: Accurate, whole-library sequencing of cyclic peptides using tandem mass s
 
 Chad Townsend - University of California Santa Cruz - 2018
 ---------------------------------------------------
-
-CycLS is a program designed to identify individual cyclic peptides from a library of known design by interpreting tandem mass spectrometry data.
+![image](./Figures/abstract.PNG)
+*CycLS* is a program designed to identify individual cyclic peptides from a library of known design by interpreting tandem mass spectrometry data.
 This allows for assays and analysis to be performed on complex mixtures containing some degree of mass redundancy without adding library design constraints.
-CycLS will soon be published and the DOI will be added to this readme.
+*CycLS* will soon be published and the DOI will be added to this readme.
 
 The purpose of this readme is to help you install and use *CycLS* well.
-
-![image](Figures/abstract.png)
 
 ### Table of Contents
 
@@ -50,7 +48,7 @@ statsmodels 0.6.1
 
 *Targets:* Either an asterisk, signifying that CycLS is to search all spectra for library members, or a comma-separated list of protonated ion exact masses (without whitespace), if interested in only a subset of the library, must be supplied first.
 
-Example: '647.523,831.978,745.069' would search only for MS2 spectra originating from those three protonated ions.
+Example: '647.523,831.978,745.069' would search only for MS<sup>2</sup> spectra originating from those three protonated ions.
 
 *mzML:* The path to the mzml format data file to be analyzed must be supplied second.
 
@@ -68,11 +66,11 @@ Example: L-alanine has been defined as the line: 'A\tN\[C@@H\](C)C(=O)O'.
 
 *-l, --linear:* Use this flag if the library to be sequenced is linear. CycLS was first tested against linear peptides in its development, and is capable of sequencing linear libraries as well as, or better than, it sequences cyclic ones, barring dominance of unimplemented neutral loss modes.
 
-*-n:* Sets an intensity threshold below which all peaks in the processed MS2 spectra are assumed to be noise and thrown out. If above 1.0, the number provided is the intensity cutoff used. If below 1.0, the number provided is treated as the maximum probability allowable probability of a peak being due to noise. In this case, a noise threshold is automatically generated to fulfill that condition. Defaults to 100.0, which may not be a useful threshold for your mass spectroscopy system.
+*-n:* Sets an intensity threshold below which all peaks in the processed MS<sup>2</sup> spectra are assumed to be noise and thrown out. If above 1.0, the number provided is the intensity cutoff used. If below 1.0, the number provided is treated as the maximum probability allowable probability of a peak being due to noise. In this case, a noise threshold is automatically generated to fulfill that condition. Defaults to 100.0, which may not be a useful threshold for your mass spectroscopy system.
 
 *-o, --out:* Sets the prefix of the output file, and defaulting to 'Sequencing'. The default value results in the two output files 'Sequencing_Out.xlsx' and 'Sequencing_Results.xlsx'. Output is given in full in the 'Out' file and summarized in 'Results' file.
 
-*-p:* Sets the precision of MS2 and MS1 spectra m/z values in that order, defaulting to 0.3 and 0.02 respectively. These values may not be appropriate for HRMS set-ups, and may need adjustment for any particular mass spectroscopy system. The two values are entered comma-separated, and without spaces (Ex: '0.3,0.02').
+*-p:* Sets the precision of MS<sup>2</sup> and MS<sup>1</sup> spectra m/z values in that order, defaulting to 0.3 and 0.02 respectively. These values may not be appropriate for HRMS set-ups, and may need adjustment for any particular mass spectroscopy system. The two values are entered comma-separated, and without spaces (Ex: '0.3,0.02').
 
 *-q, --query:* Activates an interactive results inspection mode after completing normal operations. Allows inspection of the fragment matching between single spectra and their candidate compounds, including visualization using matplotlib. Further usage instructions are supplied interactively.
 
@@ -99,11 +97,11 @@ In our hands, including UV data causes pymzml version 0.7.7 to crash, and should
 
 #### Interpreting Output:
 
-*CycLS* outputs a Results file and an Out file, with varying metrics included. Both files include all information necessary to locate the MS2 spectra used, including mass, retention time, and the scan number \(or numbers of spectra which were combined\).
+*CycLS* outputs a Results file and an Out file, with varying metrics included. Both files include all information necessary to locate the MS<sup>2</sup> spectra used, including mass, retention time, and the scan number \(or numbers of spectra which were combined\).
 
 **Out**
 
-The Out file includes the score and its components \(Unique Matches, Redundant Matches, and Percent Intensity Matched\) for each candidate to each MS2 spectrum. Unique Matches represents the count of initial fragments \(those present pre-neutral loss\) to which any match was found, including all neutral losses which originated from an initial fragment. 0.1 is added to the  Redundant Matches field for each match beyond the first traced back to a given initial fragment. The Percent Intensity Matched is the sum of the intensity of the peaks for which there was at least one fragment match divided by the total intensity of the spectrum. In the simple case, the equation below is followed, where M<sub>u</sub> is the count of unique matches, M<sub>r</sub> is the count of redundant matches, and I<sub>m</sub> is the fraction of intensity matched.
+The Out file includes the score and its components \(Unique Matches, Redundant Matches, and Percent Intensity Matched\) for each candidate to each MS<sup>2</sup> spectrum. Unique Matches represents the count of initial fragments \(those present pre-neutral loss\) to which any match was found, including all neutral losses which originated from an initial fragment. 0.1 is added to the  Redundant Matches field for each match beyond the first traced back to a given initial fragment. The Percent Intensity Matched is the sum of the intensity of the peaks for which there was at least one fragment match divided by the total intensity of the spectrum. In the simple case, the equation below is followed, where M<sub>u</sub> is the count of unique matches, M<sub>r</sub> is the count of redundant matches, and I<sub>m</sub> is the fraction of intensity matched.
 
 ![equation](http://mathurl.com/ybps97qd.png)
 
