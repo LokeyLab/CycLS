@@ -3,10 +3,9 @@ CycLS: Accurate, whole-library sequencing of cyclic peptides using tandem mass s
 
 Chad Townsend - University of California Santa Cruz - 2018
 ---------------------------------------------------
-![image](./Figures/abstract.PNG)
 *CycLS* is a program designed to identify individual cyclic peptides from a library of known design by interpreting tandem mass spectrometry data.
 This allows for assays and analysis to be performed on complex mixtures containing some degree of mass redundancy without adding library design constraints.
-*CycLS* will soon be published and the DOI will be added to this readme.
+*CycLS* is currently in press at https://doi.org/10.1016/j.bmc.2018.01.027.
 
 The purpose of this readme is to help you install and use *CycLS* well.
 
