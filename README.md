@@ -32,14 +32,7 @@ The easiest way to get the packages required to run CycLS is to install the [Ana
 Use the "conda install package-name" command to install all those packages except RDkit, peakutils, and pymzml. 
 See the RDkit github page for installation instructions. 
 Using “pip install package-name” for peakutils and pymzml is the easiest way to add those packages to an Anaconda installation, as they don't exist in the default conda channels.
-The current version of CycLS has been tested with the following versions of the packages mentioned above:
-Anaconda 4.3.1 
-openpyxl 2.4.1 
-peakutils 1.0.3 
-pymzml 0.7.7 
-rdkit 2016.09.4 
-seaborn 0.7.1 
-statsmodels 0.6.1
+The current version of CycLS has been tested with the following versions of the packages mentioned above: Anaconda 4.3.1, openpyxl 2.4.1, peakutils 1.0.3, pymzml 0.7.7, rdkit 2016.09.4, seaborn 0.7.1, and statsmodels 0.6.1
 
 ### Usage:
 
