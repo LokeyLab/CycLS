@@ -42,7 +42,7 @@ The current version of CycLS has been tested with the following versions of the 
 
 Example: '647.523,831.978,745.069' would search only for MS<sup>2</sup> spectra originating from those three protonated ions.
 
-*mzML:* The path to the mzml format data file to be analyzed must be supplied second.
+*mzML:* The path to the mzML format data file to be analyzed must be supplied second.
 
 *Constraint:* A string governing the library composition must be entered third. Building blocks within a position are comma-separated, with positions separated by semi-colons (potentially necessitating surrounding the constraint string in double-quotes to prevent their interpretation by the shell). As with the *Targets* field, no whitespace is permitted. Building blocks are defined in the amino acid database file, with single-letter amino acid codes implemented in the example database provided.
 
@@ -93,15 +93,15 @@ In our hands, including UV data causes pymzml version 0.7.7 to crash, and should
 
 **Out**
 
-The Out file includes the score and its components \(Unique Matches, Redundant Matches, and Percent Intensity Matched\) for each candidate to each MS<sup>2</sup> spectrum. Unique Matches represents the count of initial fragments \(those present pre-neutral loss\) to which any match was found, including all neutral losses which originated from an initial fragment. 0.1 is added to the  Redundant Matches field for each match beyond the first traced back to a given initial fragment. The Percent Intensity Matched is the sum of the intensity of the peaks for which there was at least one fragment match divided by the total intensity of the spectrum. In the simple case, the equation below is followed, where M<sub>u</sub> is the count of unique matches, M<sub>r</sub> is the count of redundant matches, and I<sub>m</sub> is the fraction of intensity matched.
+The Out file includes the score and its components \(Unique Matches, Redundant Matches, and Percent Intensity Matched\) for each candidate to each MS<sup>2</sup> spectrum. Unique Matches represents the count of initial fragments \(those present pre-neutral loss\) to which any match was found, including all neutral losses which originated from an initial fragment. 0.1 is added to the Redundant Matches field for each match beyond the first traced back to a given initial fragment. The Percent Intensity Matched is the sum of the intensity of the peaks for which there was at least one fragment match divided by the total intensity of the spectrum. In the simple case, the equation below is followed, where M<sub>u</sub> is the count of unique matches, M<sub>r</sub> is the count of redundant matches, and I<sub>m</sub> is the fraction of intensity matched.
 
 ![equation](http://mathurl.com/ybps97qd.png)
 
 **Results**
 
-The Results file includes the sequence of the top candidate to each spectrum, the top score, the next best score \(if there were multiple candidates\), the average score of all candidates, the number of candidates, and any expected value-related statistics. The magnitude of a score can only be directly compared to the score of other candidates against the same spectrum with confidence; despite this, it has been observed that, in some cases, higher top scores relative to the rest of the same library can be used as an indicator of sequencing confidence. A better indicator of sequencing confidence, and one which is comparable even between libraries of differing design, is the normalized difference between the top and next best scores.
+The Results file includes the sequence of the top candidate to each spectrum, the top score, the next best score \(if there were multiple candidates\), the average score of all candidates, the number of candidates, a sequencing confidence metric (discussed below), and any expected value-related statistics. 
 
-Top sequences with a higher normalized score difference are more likely to be correct, though some correctly sequenced spectra are discarded at any threshold. Low normalized score differences between similar sequences often signifies that the correct composition of the compound in question has been determined, but crucial evidence on the sequence at one or more sites is missing due to poor ionization tendency or other reasons. In such cases, the correct sequence is usually among the top three candidates for the spectrum.
+The magnitude of a score can only be directly compared to the score of other candidates against the same spectrum with confidence; despite this, it has been observed that, in some cases, higher top scores relative to the rest of the same library can be used as an indicator of sequencing confidence. A better indicator of sequencing confidence, and one which is comparable even between libraries of differing design, is the normalized difference between the top and next best scores. Top sequences with a higher normalized score difference are more likely to be correct, though some correctly sequenced spectra are discarded at any threshold. Low normalized score differences between similar sequences often signifies that the correct composition of the compound in question has been determined, but crucial evidence on the sequence at one or more sites is missing due to poor ionization tendency or other reasons. In such cases, the correct sequence is usually among the top three candidates for the spectrum.
 
 ### Known Bugs and Issues:
 
