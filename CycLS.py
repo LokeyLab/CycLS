@@ -1,6 +1,6 @@
 """A program for identifying a cyclic peptides from a known list of compounds by MSMS.
-Not meant for de novo identification of natural products, but very useful in identifying members of a library.
-The program requires an MZML format file from which to draw spectra, a string containing instructions to generate the library,
+Not meant for identification of natural products, but useful to identify members of a library.
+The program requires an MZML file from which to draw spectra, a string containing instructions to generate the library,
 and a database containing the smiles strings of the amino acids used in the library configured in an N->C terminal manner
 as L-Ala  N[C@@H](C)C(=O)O.
 
@@ -54,46 +54,46 @@ def parse_args ():
     parser.add_argument ('mzml',
             help='The mzml file from which spectra are to be drawn.')
     parser.add_argument ('constraint',
-            help='The constraint string governing library generation. \
-            Building blocks as defined in the residues file at a single location are separated by commas. \
+            help='The constraint string governing library generation. Building blocks at a single location are separated by commas. \
             Positions are separated by semicolons. There should be no whitespace. \
             Ex: \"L,A,D;E,Q,K;P,G,R\" is a tripeptide with three possibilities for building blocks at each position.')
     incompatible.add_argument ('-r', '--rules', dest='rules', 
             help='Input an additional string with position-independent constraints on library composition. \
-            Rules are input as a single building block, a comparison operator (=,<,>,<=,>=), and an integer value. \
-            Rules for AlogP and mass can be accessed through the names \'AlogP\' and \'MolWeight\' respectively and can be compared to float values. \
-            Multiple rules should be separated by a semicolon. \
-            Because there will be spaces between characters, the set of rules should be encompassed by quotes. \
-            Ex: "G < 3;R > 2;AlogP > 2.27" will generate a library from the constraint string and filter down to members with less than 3 glycines, more than 2 arginines and with AlogP greater than 2.27.')
+            Rules are input as a single building block, a comparison operator (=,<,>,<=,>=),\
+            and an integer value. Rules for AlogP and mass can be accessed through the names \'AlogP\' and \
+            \'MolWeight\' respectively and can be compared to float values. Multiple rules should be separated \
+            by a semicolon. Because there will be spaces between characters, the set of rules should be \
+            encompassed by quotes. Ex: "G < 3;R > 2;AlogP > 2.27" will generate a library from the \
+            constraint string and filter down to members with less than 3 glycines, more than 2 arginines \
+            and with AlogP greater than 2.27.')
     parser.add_argument ('-s', '--scanranges', dest='scanranges', default=None,
             help='Sets the minimum and maximum scan id\'s to be considered. Ex: 175-354.\
             Comma separated values will be treated as a list of scan ranges.\
-            Scan ranges will be distributed to targets in the order they are entered and there must be an equal number of targets and scan ranges.')
+            Scan ranges will be distributed to targets in the order they are entered and \
+            there must be an equal number of targets and scan ranges.')
     parser.add_argument ('-o', '--out', dest='outfile', default='Sequencing',
             help='Sets the prefix of the output file. Defaults to \'Sequencing\', resulting in the files \'Sequencing_Results.xlsx\' and \'Sequencing_Out.xlsx\'.')
     parser.add_argument ('-d', '--database', dest='aadatabase', type=openfiles,
-            default='aadatabase.txt', help='Sets the name of the amino acid name to smiles string database to be accessed for library generation. \
-            Defaults to \'aadatabase.txt\'.')
+            default='aadatabase.txt', help='Sets the name of the amino acid name to smiles string \
+            database to be accessed for library generation. Defaults to \'aadatabase.txt\'.')
     parser.add_argument ('-l', '--linear', action='store_true',dest='linear', 
-            help='Use if the library is linear. This mode has had only limited testing and may be missing key neutral loss types.')
-    parser.add_argument ('-v', '--verbose', dest='verbose', default=0, type=int,
+            help='The library is linear. Otherwise assumed to be cyclic.')
+    parser.add_argument ('-v', '--verbose',dest='verbose',default=0,type=int,
             help='Verbosity level. Prints out general status anouncments at 1. Higher levels give more detail.')
     parser.add_argument ('-q', '--query', action='store_true',dest='query', 
-            help='Activate query mode, in which an interactive state occurs after normal program operation. \
-            Compound names entered will yield fragment names, masses, and which spectra they hit in.')
+            help='Activate query mode, in which an interactive state occurs after normal program operation. Compound names entered will \
+            yield fragment names, masses, and which spectra they hit in.')
     parser.add_argument ('-u', dest='workernum', type=int,
             help='Sets the number of worker processes. Defaults to the number of CPU\'s minus one.')
     parser.add_argument ('-n', dest='noiselevel', type=float, default=100.0,
-            help='Sets the threshold intensity below which peaks are thrown out if above 1.0. \
-            If below 1.0, acts as the maximum probability of a peak which survives filtration being due to noise.')
+            help='Sets the threshold intensity below which peaks are thrown out if above 1.0. If below 1.0, acts as the \
+            maximum probability of a peak which survives filtration being due to noise. 0.1-0.5 tends to give good results.')
     parser.add_argument ('-p', dest='precision', default=None,
-            help='Precision of MS2 and MS1 spectra m/z values respectively; this will vary with instrument and protocol. \
-            Defaults to \"0.3,.02\".')
+            help='Precision of MS2 and MS1 spectra m/z values respectively; this will vary with instrument and protocol. Defaults to \'0.3,.02\'.')
     incompatible.add_argument ('-t', '--truncate', action='store_true',dest='trunc', 
-            help='Searches for truncations of the library in addition to full length library members. \
-            May significantly increase run time for large libraries. Incompatible with rule usage.')
+            help='Searches for truncations of the library in addition to full length library members. May significantly increase run time for large libraries. Incompatible with rule usage.')
     parser.add_argument('-e', dest='evalues', action='store_true',
-            help='Attempts to calculate E-values for the scores of each candidate molecule. Decoy database sizes under 1000 do not generate useful E-values. Experimental feature.')
+            help='Given that the search database for a spectrum is of sufficient size, attempts to calculate E-values for the scores of each candidate molecule. Decoy database sizes under 1000 do not generate useful E-values. Experimental feature.')
     options = parser.parse_args()
     #-n
     if not options.workernum:
@@ -113,9 +113,9 @@ def parse_args ():
             parser.print_help()
             sys.exit(1)
     #Targets and -s
-    #No targets specified
+    #Target search mode
     if options.targets == '*':
-        #Scan limit specified
+        #Search scan limit specified
         if options.scanranges:
             options.scanranges = options.scanranges.split(',')
             if len(options.scanranges) != 1:
@@ -168,14 +168,14 @@ def parse_args ():
                     print('Error: -s argument formatted incorrectly.')
                     parser.print_help()
                     sys.exit(1)
-        #Scan ranges not specified
+        #No scan ranges specified
         else:
             options.scanranges=['*']*len(options.targets)
     return options
 
 def getfrags (name, aatomass, linear):
-    """Create all possible fragments of the input molecule and organize them by name and mass. 
-    Ions are generated protonated at +1 charge.
+    """Create all possible fragments of the input molecule
+    and organize them by name and mass. Ions are +1 with H+.
     """
     byname = {}#name:getmass(name,aatomass,linear)+1.0078250321 #+H
     positionlist = name.split(',')
@@ -232,7 +232,7 @@ def flatten (x):
     return result
 
 def uniquemass (positionlist, aatomass, linear):
-    """Generates the smallest set of unique masses by locating and combining positions with identical composition, then pruning duplicates that remain.
+    """generates the smallest set of unique masses by locating and combining positions with identical composition, then pruning duplicates that remain.
     """
     amidebonds = len(positionlist)-1 if linear else len(positionlist)
     #Convert amino acid names from each position in positionlist to masses, then sort them.
@@ -241,7 +241,7 @@ def uniquemass (positionlist, aatomass, linear):
     flatcnt = collections.Counter([','.join(sub) for sub in mposlist])
     #For redundant positions, generate a tuple of combinations of the positions as floats, else just convert to a list of floats.
     comblist = [[[float(b) for b in c] for c in itertools.combinations_with_replacement(sub.split(','),flatcnt[sub])] if flatcnt[sub] > 1 else [float(b) for b in sub.split(',')] for sub in flatcnt]
-    #Combinations are inside tuples, so we need to flatten the list before we can sum it for each product. Format fixes float math imprecision for otherwise-unrecognized duplicates.
+    #Combinations are inside tuples, so we need to flatten the list before we can sum it for each product. Format fixes float math imprecision for otherwise unrecognized duplicates.
     permlist = [float('{:.{digits}f}'.format((sum(flatten(p))-amidebonds*18.0105646863),digits=5)) for p in itertools.product(*comblist)]
     #If there are duplicate masses in different positions then there will still be duplicate masses. Remove them.
     return list(set(permlist))
@@ -252,8 +252,8 @@ def stringid (target,spectra):
     return '{},{},{}'.format(target,spectra[0]['scan start time']*60,sorted([s['id'] for s in spectra]))
     
 def copyspectrum (spec):
-    """Copies all the useful bits of a spectrum object.
-    Used to avoid a the deepcopy triggered by spectrum.deRef().
+    """Copies all the bits of a spectrum that I care about.
+    Used to avoid a slow deepcopy triggered by spectrum.deRef()
     """
     newspectrum = pymzml.spec.Spectrum(spec.measuredPrecision)
     for k in ['ms level','filter string','id','precursors','scan start time','selected ion m/z','total ion current','charge state','MS:1000512']:
@@ -282,6 +282,7 @@ def processSpectra (mzml, precision, scanranges, targets, positionlist, aatomass
     MS1precision=precision[1]
     MS2precision=precision[0]
     #Generate search bounds and constants
+    #What masses should we care about?
     amidebonds = len(positionlist)-1 if linear else len(positionlist)
     positionalmasslist = [[aatomass[p] for p in pos] for pos in positionlist]
     mintarget = sum([min(pos) for pos in positionalmasslist])-amidebonds*18.0105646863+1.0078250321-MS1precision #smallest [M+H]
@@ -299,6 +300,7 @@ def processSpectra (mzml, precision, scanranges, targets, positionlist, aatomass
         # print('Isotopes are present in the library. MS2 deisotoping aborted.')
     # if MS2precision > 0.25 and verbose:
         # print('MS2 precision is insufficient to reliably deisotope. MS2 deisotoping aborted.')
+    #gobble up the spectra; there really shouldn't be an mzml file larger than your RAM here. That would be quite impressive.
     reader = pymzml.run.Reader(mzml, MSn_Precision=MS2precision/maxtarget)
     spectralist = [copyspectrum(spec) for spec in reader]
     processedspectra = {}
@@ -324,7 +326,7 @@ def processSpectra (mzml, precision, scanranges, targets, positionlist, aatomass
         if spectrum['ms level'] == 2:
             neighborlist.append(spectrum)
             allpeaks.extend([x[1] for x in spectrum.peaks])
-    #Clean up
+    #Clean up after the loop since we never hit a capping MS1 event.
     if neighborlist != []:
         precursorCorrect(parentspectrum, neighborlist, mintarget, maxtarget, MS2precision, MS1precision, isotopes)
         correctedMS2list.extend(filterbyscan(targets, scanranges, neighborlist, mintarget, maxtarget, MS2precision, MS1precision))
@@ -371,7 +373,7 @@ def processSpectra (mzml, precision, scanranges, targets, positionlist, aatomass
                 continue
             if uniquemasslist[m]+MS1precision > hrm:
                 targets.append(hrm)
-    #Group them into target:spectra pairings
+    #Now group them into target:spectra pairings
     if targets == '*' or '*' in scanranges: #Either all scanranges are '*' or none are.
         groupedspectra = groupSpectra(targets, neighborhoodlen, highresmasses)
     else: #Already grouped! Reogranize it.
@@ -381,7 +383,7 @@ def processSpectra (mzml, precision, scanranges, targets, positionlist, aatomass
         groupedspectra['targets'] = sorted(groupedspectra['targets'])
         for t in groupedspectra['targets']:
             groupedspectra['spectra'].append(highresmasses[t])
-    #Report findings.
+    #Report findings if verbose.
     if verbose:
         print('Found {} targets:'.format(len(groupedspectra['targets'])))
         print(groupedspectra['targets'])
@@ -421,7 +423,6 @@ def getPrecursorFromSpectrum (spectrum):
 
 def getMassrangeFromSpectrum (spectrum):
     """Grabs the mass range from the filter string when possible. It's the only place I've found this value in a spectrum object (inexplicably).
-    Could be a Thermo-related thing.
     """
     try:
         r = spectrum['MS:1000512'].split()[-1].split('-')
@@ -470,9 +471,7 @@ def precursorCorrect (MS1, MS2list, mintarget, maxtarget, MS2precision, MS1preci
                     if intensityfrac < 0.25: 
                         MS2['charge state'] = c
                         break
-        #
-        #Deisotoping implementation on hold. Use case is for peptides large-enough that the non-isotopic peak is no longer the most intense peak in the envelope.
-        #
+        #ON HOLD; Possibly of low importance if data is acquired reasonably. Only possibly useful when we get up to 11mers or so.
         # #1. Look for isotopic envelopes in the MS2 spectrum.
         # if (not isotopes) and MS2precision < 0.25:
             # envlist = []
@@ -555,7 +554,8 @@ def groupSpectra (targets, neighborhoodlen, highresmasses):
     return paired
     
 def graphspectra (modelinput,target,spectra,combined):
-    """Graphs spectra and shows where various noise thresholds fall on them. Useful for troubleshooting.
+    """Graphs spectra and shows where various noise thresholds fall on them.
+       Useful for troubleshooting.
     """
     import matplotlib
     from matplotlib import pyplot
@@ -613,7 +613,7 @@ def filterpeaks (spectra,modelinput,verbose,noiselevel):
     The fifty peaks of highest intensity are then accepted.
     """
     newspectra = []
-    maxpeaks = 100 #Arbitrary.
+    maxpeaks = 100 #Arbitrary
     if noiselevel > 1.0:
         minintensity=noiselevel
     else:
@@ -631,7 +631,7 @@ def filterpeaks (spectra,modelinput,verbose,noiselevel):
             newlist.sort(key=lambda x: x[0])
         elif newlist == []:
             spectrum.peaks = [(0,0)]
-        spectrum.peaks = newlist
+        spectrum.peaks = newlist #This should update mz and i properly through the setter function.
         spectrum['total ion current']=sum(spectrum.i)
     return spectra
     
@@ -644,7 +644,7 @@ def noiseleveltointensitythreshold (modelinput,verbose,noiselevel):
     modelinput.sort()
     ninetenthslen = (len(modelinput)*9)//10
     x = np.asarray(modelinput[:ninetenthslen])
-    if len(x) > 30000: #Arbitrary. Adjust based on speed of cdf evaluation.
+    if len(x) > 30000: #Arbitrary; adjust based on speed of cdf evaluation.
         x = np.random.choice(x,size=30000,replace=False)
     logx = np.log(x) #Transform from [0,inf] to [-inf,inf], which is the space the kernel is in
     kde = sm.nonparametric.KDEUnivariate(logx)
@@ -1537,7 +1537,7 @@ def queryspectrum (spectrum, hitrecord, positionlist, rules, aadict, aatomass, a
     linear = options.linear
     evalues = options.evalues
     verbose = options.verbose
-    print('Query mode engaged for target mass {}.\nEnter a molecule name. Ex: {}'.format(spectrum['uid'],next(libgen(positionlist,rules,aadict,aatomass,aatoAlogP,evalues,linear)).name))
+    print('Query mode engaged for target mass {}.\nEnter a molecule name. Ex: {}'.format(spectrum['uid'],next(libgen(positionlist,rules,aadict,aatomass,aatoAlogP,linear,evalues)).name))
     print('Type \'next\' to proceed to querying the next parent ion if one exists or \'quit\' to exit the program.')
     print('Type \'graph\' to see a visual representation of the last query with virtual fragments in blue.')
     lastquery = None
@@ -1681,7 +1681,7 @@ def scoreandprint (outfile,spectra,hitsdict,precision,evalues,verbose):
         peakcount=0
         if hitrecord.keys() != []:
             peakcount = len(spectrum.peaks)
-            if peakcount <= 5: #Ensures the most egregious minimal-data-quality-but-high-intensity-matching spectra (common) are pruned.
+            if peakcount <= 5: #Ensures the most egregious minimal data quality but high intensity-matching spectra (common) are pruned.
                 continue
             for molecule in hitrecord:
                 for frag in hitrecord[molecule][0]:
@@ -1716,7 +1716,7 @@ def scoreandprint (outfile,spectra,hitsdict,precision,evalues,verbose):
     humanout = openpyxl.Workbook()
     humansheet = humanout.active
     compsheet = compout.active
-    humancols = ['Mass','Time (s)','Scan Range','Top Sequence','Score','Next Best Score','Number of Hits','Average Score']
+    humancols = ['Mass','Time (s)','Scan Range','Top Sequence','Score','Next Best Score','Number of Hits','Average Score','Sequencing Confidence']
     if evalues:
         humancols.extend(['E-value','Null Database Size','P of score or greater'])
     for i,word in zip(itertools.count(1),humancols):
@@ -1760,6 +1760,7 @@ def scoreandprint (outfile,spectra,hitsdict,precision,evalues,verbose):
             # plt.tight_layout()
             # plt.show()
         first = True
+        firstscore = None
         second = False
         total = 0
         for scores in sorted(finalscores,key=lambda x: x[4],reverse=True):
@@ -1774,13 +1775,15 @@ def scoreandprint (outfile,spectra,hitsdict,precision,evalues,verbose):
                         pgreaterscore = 'Not Computable'
                 if second:
                     humansheet.cell(row=rh,column=humancols.index('Next Best Score')+1,value=scores[4])
+                    humansheet.cell(row=rh,column=humancols.index('Sequencing Confidence')+1,value=(firstscore-scores[4])/firstscore)
                     second=False
                 if first:
-                    humansheet.cell(row=rh,column=humancols.index('Mass')+1,value=mass-1.0078250321)#+H
+                    humansheet.cell(row=rh,column=humancols.index('Mass')+1,value=mass-1.0078250321)#This will need to be done differently once I reorganize things for multiple possible ionization partners.
                     humansheet.cell(row=rh,column=humancols.index('Time (s)')+1,value=time)
                     humansheet.cell(row=rh,column=humancols.index('Scan Range')+1,value=scanrange)
                     humansheet.cell(row=rh,column=humancols.index('Top Sequence')+1,value=scores[0].name)
                     humansheet.cell(row=rh,column=humancols.index('Score')+1,value=scores[4])
+                    firstscore=scores[4]
                     humansheet.cell(row=rh,column=humancols.index('Number of Hits')+1,value=numhits)
                     if evalues:
                         humansheet.cell(row=rh,column=humancols.index('E-value')+1,value=evalue)
@@ -1815,6 +1818,7 @@ def scoreandprint (outfile,spectra,hitsdict,precision,evalues,verbose):
     return [x[0] for x in spectralscores]
     
 def main ():
+    #Some argument processing
     options = parse_args()
     if options.verbose:
         stime = time.time()
