@@ -9,7 +9,7 @@ This allows for assays and analysis to be performed on complex mixtures containi
 
 The purpose of this readme is to help you install and use *CycLS* well.
 
-### Table of Contents
+## Table of Contents
 
 -   [Installation](#installation)
 -   [Usage](#usage)
@@ -22,11 +22,11 @@ The purpose of this readme is to help you install and use *CycLS* well.
 -   [Known Bugs and Issues](#known-bugs-and-issues)
 -   [Bug Reports](#bug-reports)
 
-### Installation:
+## Installation:
 
 Run the source code using Python from the command line.
 
-#### Requirements:
+### Requirements:
 
 The easiest way to get the packages required to run CycLS is to install the [Anaconda Python distribution](https://www.anaconda.com/) from Continuum Analytics, then install [RDkit](https://github.com/rdkit/rdkit), [peakutils](https://bitbucket.org/lucashnegri/peakutils), [openpyxl](https://bitbucket.org/openpyxl/openpyxl), [statsmodel](http://www.statsmodels.org/stable/index.html), [seaborn](https://seaborn.pydata.org/index.html), and [pymzml](https://github.com/pymzml/pymzML). 
 Use the "conda install package-name" command to install all those packages except RDkit, peakutils, and pymzml. 
@@ -34,9 +34,9 @@ See the RDkit github page for installation instructions.
 Using “pip install package-name” for peakutils and pymzml is the easiest way to add those packages to an Anaconda installation, as they don't exist in the default conda channels.
 The current version of CycLS has been tested with the following versions of the packages mentioned above: Anaconda 4.3.1, openpyxl 2.4.1, peakutils 1.0.3, pymzml 0.7.7, rdkit 2016.09.4, seaborn 0.7.1, and statsmodels 0.6.1
 
-### Usage:
+## Usage:
 
-#### Required arguments:
+### Required arguments:
 
 *Targets:* Either an asterisk, signifying that CycLS is to search all spectra for library members, or a comma-separated list of protonated ion exact masses (without whitespace), if interested in only a subset of the library, must be supplied first.
 
@@ -48,7 +48,7 @@ Example: '647.523,831.978,745.069' would search only for MS<sup>2</sup> spectra 
 
 Example: 'L,A,D;E,Q,K;P,G,R' is a tripeptide with three possibilities for building blocks at each position.
 
-#### Optional arguments:
+### Optional arguments:
 
 *-d, --database:* Sets the name of the residue name and SMILES string database to be used for library generation, defaulting to 'aadatabase.txt'. An example database has been included in the repository. The database format is NAME\tSMILES for each line. Though it is not currently necessary for CycLS, we have rearranged the SMILES strings for each residue such that they begin with the N-terminus of the residue and end with the C-terminus of the residue (though this re-ordering is not currently necessary for *CycLS*). Note that any SMILES string can be defined as a 'residue', and some non-amino acid examples are present in the provided residue database.
 
@@ -80,14 +80,14 @@ Example: If the targets 654 and 708 had been entered and '-s 175-354,378-412' wo
 
 *-v, --verbose:* Sets verbosity level, defaulting to zero. Prints general status announcements to the terminal at level 1 or higher.
 
-#### Input File Preparation:
+### Input File Preparation:
 
 *CycLS* uses the pymzml package to read in spectra data from mzML format files. We suggest using [Proteowizard](http://proteowizard.sourceforge.net/)'s msconvert program to convert mass spectrometry data to the mzML format. We used the command line version of msconvert from Proteowizard version 3.0.10577 with some modifiers to strip unnecessary data:
 >msconvert --simAsSpectra \*.raw --32 --zlib --filter “peakPicking true 1-“ --filter “zeroSamples removeExtra”
 
 In our hands, including UV data causes pymzml version 0.7.7 to crash, and should therefore be avoided.
 
-#### Interpreting Output:
+### Interpreting Output:
 
 *CycLS* outputs a Results file and an Out file, with varying metrics included. Both files include all information necessary to locate the MS<sup>2</sup> spectra used, including mass, retention time, and the scan number \(or numbers of spectra which were combined\).
 
@@ -103,11 +103,11 @@ The Results file includes the sequence of the top candidate to each spectrum, th
 
 The magnitude of a score can only be directly compared to the score of other candidates against the same spectrum with confidence; despite this, it has been observed that, in some cases, higher top scores relative to the rest of the same library can be used as an indicator of sequencing confidence. A better indicator of sequencing confidence, and one which is comparable even between libraries of differing design, is the normalized difference between the top and next best scores. Top sequences with a higher normalized score difference are more likely to be correct, though some correctly sequenced spectra are discarded at any threshold. Low normalized score differences between similar sequences often signifies that the correct composition of the compound in question has been determined, but crucial evidence on the sequence at one or more sites is missing due to poor ionization tendency or other reasons. In such cases, the correct sequence is usually among the top three candidates for the spectrum.
 
-### Known Bugs and Issues:
+## Known Bugs and Issues:
 
 Isotopes are handled via asterisks in the constraint string and represent deuterium only: L\*\*\* represents triple-deuterated L-Leucine using the SMILES representation of L-Leucine and interpreting the asterisks on the fly. This will be changed to SMILES-based isotope interpretation in the future.
 
-### Bug Reports:
+## Bug Reports:
 
 Please submit an issue if you find a bug!
 
