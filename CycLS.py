@@ -374,15 +374,24 @@ def processSpectra (mzml, precision, scanranges, targets, positionlist, aatomass
             if uniquemasslist[m]+MS1precision > hrm:
                 targets.append(hrm)
     #Now group them into target:spectra pairings
-    if targets == '*' or '*' in scanranges: #Either all scanranges are '*' or none are.
-        groupedspectra = groupSpectra(targets, neighborhoodlen, highresmasses)
-    else: #Already grouped! Reogranize it.
-        groupedspectra = {'targets':[],'spectra':[]}
-        for t in highresmasses:
-            groupedspectra['targets'].append(t)
-        groupedspectra['targets'] = sorted(groupedspectra['targets'])
-        for t in groupedspectra['targets']:
-            groupedspectra['spectra'].append(highresmasses[t])
+    #
+    #
+    #Previously this created the behavior of all spectra of one mass being combined for each mass if scan ranges were specified.
+    #This is obviously silly unless multiple scan ranges can be entered for each mass and therefore has been commented out.
+    #
+    #if targets == '*' or '*' in scanranges: #Either all scanranges are '*' or none are.
+    groupedspectra = groupSpectra(targets, neighborhoodlen, highresmasses)
+    #else: #Already grouped! Reogranize it.
+    #    groupedspectra = {'targets':[],'spectra':[]}
+    #    for t in highresmasses:
+    #        groupedspectra['targets'].append(t)
+    #    groupedspectra['targets'] = sorted(groupedspectra['targets'])
+    #    for t in groupedspectra['targets']:
+    #        groupedspectra['spectra'].append(highresmasses[t])
+    #
+    #
+    #End of code block
+    
     #Report findings if verbose.
     if verbose:
         print('Found {} targets:'.format(len(groupedspectra['targets'])))
@@ -1530,16 +1539,19 @@ def libgen (positionlist, rulelist, aadict, aatomass, aatoAlogP, linear, evalues
         if rulelist is not None:
             print("No compounds satisfied all rules.")
        
-def queryspectrum (spectrum, hitrecord, positionlist, rules, aadict, aatomass, aatoAlogP, options):
+def queryspectrum (spectrum, hitrecord, positionlist, rules, aadict, aatomass, aatoAlogP, querycompounds, options):
     """Examine specific spectrum-compound matches by inputting molecular names. Useful for troubleshooting.
     """
     precision = options.precision
     linear = options.linear
     evalues = options.evalues
     verbose = options.verbose
-    print('Query mode engaged for target mass {}.\nEnter a molecule name. Ex: {}'.format(spectrum['uid'],next(libgen(positionlist,rules,aadict,aatomass,aatoAlogP,linear,evalues)).name))
+    if querycompounds != []:
+        print('Query mode engaged for target mass {}.\nEnter a molecule name. Ex: {}'.format(spectrum['uid'],querycompounds[0]))
+        print('Type \'graph\' to see a visual representation of the last query with virtual fragments in blue.')
+    else:
+        print('This spectrum does not match any library masses but can be inspected by typing \'graph\'.')
     print('Type \'next\' to proceed to querying the next parent ion if one exists or \'quit\' to exit the program.')
-    print('Type \'graph\' to see a visual representation of the last query with virtual fragments in blue.')
     lastquery = None
     annotatedbyname = None
     while True:
@@ -1548,112 +1560,143 @@ def queryspectrum (spectrum, hitrecord, positionlist, rules, aadict, aatomass, a
         if line == 'quit':
             print('Exiting.')
             sys.exit(0)
-        if line == 'next':
+        elif line == 'next':
             return
-        if line == 'graph':
-            if not lastquery:
-                print('A molecule must have been queried before it can be graphed.')
+        elif line == 'more':
+            for compoundname in querycompounds:
+                print(compoundname)
+        elif line == 'graph':
+            print('The last molecule queried for this spectrum will be overlaid if available.')
+            if lastquery:
+                fig, ax = plt.subplots(1,1)
+                fragmzlist = [x[1]+(random.random()-0.5)/10 for x in annotatedbyname]
+                markerline, stemlines, baseline = ax.stem(fragmzlist,[max(spectrum.i)*1.1]*len(fragmzlist), markerfmt=' ', label='Fragments')
+                plt.setp(stemlines, 'color', 'b', )
+                markerline, stemlines, baseline = ax.stem(spectrum.mz,spectrum.i,markerfmt=' ',label='Spectrum')
+                plt.setp(stemlines, 'color', 'g', 'linewidth', 3)
+                plt.title('Simulated fragments of {} overlaid on spectrum {}'.format(lastquery,spectrum['uid']))
+                plt.show()
                 continue
-            import matplotlib
-            from matplotlib import pyplot
-            fig, ax = pyplot.subplots(1,1)
-            fragmzlist = [x[1]+(random.random()-0.5)/10 for x in annotatedbyname]
-            markerline, stemlines, baseline = ax.stem(fragmzlist,[max(spectrum.i)*1.1]*len(fragmzlist), markerfmt=' ', label='Fragments')
-            pyplot.setp(stemlines, 'color', 'b', )
-            markerline, stemlines, baseline = ax.stem(spectrum.mz,spectrum.i,markerfmt=' ',label='Spectrum')
-            pyplot.setp(stemlines, 'color', 'g', 'linewidth', 3)
-            pyplot.title('Simulated fragments of {} overlaid on spectrum {}'.format(lastquery,spectrum['uid']))
-            pyplot.show()
-            continue
-        linelist = line.split(',')
-        bad = False
-        for aa in linelist:
-            if aa not in aatomass.keys():
-                print('The compound you entered was formatted incorrectly or not in the library specified by the constraint string.')
-                bad = True
-                break
-        if bad:
-            continue
-        hitrecordnames = [h.name for h in hitrecord.keys()]
-        
-        if line not in hitrecordnames:
-            print('The compound you entered was not considered because its exact mass does not match the target mass.')
-            continue
-        else:
-            idx = hitrecordnames.index(line)
-            cmpd = list(hitrecord.keys())[idx]
-        lastquery = line
-        nloss = neutralloss(aadict, aatomass)
-        byname = getfrags(line,aatomass,linear)
-        #correspondances = collections.defaultdict(set)
-        byneuname = {}
-        for name in byname:
-            for neuname,neutral in nloss.get(line,name,byname[name]).items():
-                byneuname[neuname] = neutral
-                #correspondances[name].add(neuname)
-        annotatedbyname = sorted([[key,value,''] for key,value in byneuname.items()],key=lambda x: x[1])
-        #byname = merge_dicts(byname,byneuname)
-        oorc = 0
-        p = 0
-        plen = len(spectrum.mz)
-        for i in annotatedbyname:
-            #If we are at a mass higher than the upper bound, we need to advance the bounds.
-            while spectrum.mz[p]+precision[0] < i[1]:
-                if p+1 < plen:
-                    p+=1
-                else:
-                    break
-            #If we are at a mass lower than the lower bound, we need to advance in mass.
-            if spectrum.mz[p]-precision[0] > i[1]:
-                continue
-            #Are we between the bounds?
-            if spectrum.mz[p]+precision[0] > i[1]:
-                #add to list of hits
-                i[2] = 'Match'
-        minmz,maxmz = getMassrangeFromSpectrum(spectrum)
-        mainfrags = 0
-        bonusfrags = 0
-        for frag in hitrecord[cmpd][0]:
-            fragcount = hitrecord[cmpd][0][frag]
-            if fragcount > 0:
-                mainfrags+=1
-                bonusfrags+=fragcount-1
-        print('Compound Mass (uncharged): {}'.format(getmass(line, aatomass, linear)))
-        print('Scan Range {}-{}, {} main ion series hits from {} total matches.'.format(minmz,maxmz,mainfrags,mainfrags+bonusfrags))
-        print('Fragment Name                   Mass            Status')
-        gamma=[]
-        beta=[]
-        for frag in annotatedbyname:
-            if minmz > frag[1] or maxmz < frag[1]:
-                frag[2]='Out of Range'
-                oorc+=1
-            if '_y' in frag[0]:
-                gamma.append(frag)
             else:
-                beta.append(frag)
-        for frag in gamma:
-            print('{:<30}\t{}\t{}'.format(frag[0],frag[1],frag[2]))
-        for frag in beta:
-            print('{:<30}\t{}\t{}'.format(frag[0],frag[1],frag[2]))
-        if verbose:
-            #print('Querymode Says: {} hits out of {} fragments tried, with {} fragments out of range.'.format(matchcount,trycount-oorc, oorc))
-            pass
+                fig, ax = plt.subplots(1,1)
+                markerline, stemlines, baseline = ax.stem(spectrum.mz,spectrum.i,markerfmt=' ',label='Spectrum')
+                plt.setp(stemlines, 'color', 'g', 'linewidth', 3)
+                plt.title('Spectrum {}'.format(spectrum['uid']))
+                plt.show()
+                continue
+        else:
+            linelist = line.split(',')
+            bad = False
+            for aa in linelist:
+                if aa not in aatomass.keys():
+                    print('The compound you entered was formatted incorrectly or not in the library specified by the constraint string.')
+                    bad = True
+                    break
+            if bad:
+                continue
+            if line not in querycompounds:
+                print('The compound you entered was not considered because its exact mass does not match the target mass.')
+                continue
+            lastquery = line
+            nloss = neutralloss(aadict, aatomass)
+            byname = getfrags(line,aatomass,linear)
+            #correspondances = collections.defaultdict(set)
+            byneuname = {}
+            for name in byname:
+                for neuname,neutral in nloss.get(line,name,byname[name]).items():
+                    byneuname[neuname] = neutral
+                    #correspondances[name].add(neuname)
+            annotatedbyname = sorted([[key,value,''] for key,value in byneuname.items()],key=lambda x: x[1])
+            #byname = merge_dicts(byname,byneuname)
+            oorc = 0
+            p = 0
+            plen = len(spectrum.mz)
+            for i in annotatedbyname:
+                #If we are at a mass higher than the upper bound, we need to advance the bounds.
+                while spectrum.mz[p]+precision[0] < i[1]:
+                    if p+1 < plen:
+                        p+=1
+                    else:
+                        break
+                #If we are at a mass lower than the lower bound, we need to advance in mass.
+                if spectrum.mz[p]-precision[0] > i[1]:
+                    continue
+                #Are we between the bounds?
+                if spectrum.mz[p]+precision[0] > i[1]:
+                    #add to list of hits
+                    i[2] = 'Match'
+            hitrecordnames = [h.name for h in hitrecord.keys()]
+            mainfrags = 0
+            bonusfrags = 0
+            minmz,maxmz = getMassrangeFromSpectrum(spectrum)
+            if line in hitrecordnames:
+                cmpd = list(hitrecord.keys())[hitrecordnames.index(line)]
+                for frag in hitrecord[cmpd][0]:
+                    fragcount = hitrecord[cmpd][0][frag]
+                    if fragcount > 0:
+                        mainfrags+=1
+                        bonusfrags+=fragcount-1
+            print('Compound Mass (uncharged): {}'.format(getmass(line, aatomass, linear)))
+            print('Scan Range {}-{}, {} main ion series hits from {} total matches.'.format(minmz,maxmz,mainfrags,mainfrags+bonusfrags))
+            print('Fragment Name                   Mass            Status')
+            gamma=[]
+            beta=[]
+            for frag in annotatedbyname:
+                if minmz > frag[1] or maxmz < frag[1]:
+                    frag[2]='Out of Range'
+                    oorc+=1
+                if '_y' in frag[0]:
+                    gamma.append(frag)
+                else:
+                    beta.append(frag)
+            for frag in gamma:
+                print('{:<30}\t{}\t{}'.format(frag[0],frag[1],frag[2]))
+            for frag in beta:
+                print('{:<30}\t{}\t{}'.format(frag[0],frag[1],frag[2]))
+            if verbose:
+                #print('Querymode Says: {} hits out of {} fragments tried, with {} fragments out of range.'.format(matchcount,trycount-oorc, oorc))
+                pass
     
 def querymode (ordereduids, spectra, hitrecords, positionlist, rules, aadict, aatomass, aatoAlogP, options):
     """Allows user to query specific hit molecules in specific spectra, prints their fragment names, masses, and which matched the spectrum.
     """
+    ordereduids = sorted(ordereduids, key=lambda x: float(x.split(',')[1])) #was ordered by score, now ordered by retention time.
+    #Build full UID and spectrum mass lists (assumed all non-target spectra have been filtered out by now.)
+    alluids = sorted(spectra.keys(),key=lambda x: float(x.split(',')[1]))
+    spectralmasses = [float(u.split(',')[0]) for u in alluids]
+    #This makes query mode able to report appropriate compound names to investigate, though no guarantee of them having been scored.
+    uidstocompounds = {u:[] for u in alluids}
+    for compound in libgen(positionlist,rules,aadict,aatomass,aatoAlogP,options.linear,options.evalues):
+        pmass = getmass(compound.name,aatomass,options.linear)
+        MH = pmass+1.0078250321
+        MHlow,MHhigh = MH-options.precision[1],MH+options.precision[1]
+        for i,sm in enumerate(spectralmasses):
+            if MHlow <= sm <= MHhigh:
+                uidstocompounds[alluids[i]].append(compound.name)
+    more = False
     while True:
         print("Please enter one of the following spectra names to examine sequences matched to it or \'quit\' to exit the program.")
-        for uid in ordereduids:
-            print (uid)
+        if more:
+            for uid in alluids:
+                print (uid)
+        else:
+            for uid in ordereduids:
+                print (uid)
+        print("If the spectrum of interest is not among those, type \'more\' for a full list.")
         line = input('>>>')
         line = line.strip()
         if line == 'quit':
             break
-        elif line in ordereduids:
+        elif line in alluids:
             spectrum = spectra[line]
             hitrecord = hitrecords[line]
-            queryspectrum(spectrum, hitrecord, positionlist, rules, aadict, aatomass, aatoAlogP, options)
+            querycompounds = uidstocompounds[line]
+            queryspectrum(spectrum, hitrecord, positionlist, rules, aadict, aatomass, aatoAlogP, querycompounds, options)
+        elif line == 'more':
+            if more:
+                more = False
+            else:
+                more = True
         else:
             print("User input did not match any spectrum name.")
             continue
@@ -1730,7 +1773,7 @@ def scoreandprint (outfile,spectra,hitsdict,precision,evalues,verbose):
     rc=2
     for scoreset in spectralscores:
         uid,peakcount,totI,finalscores=scoreset
-        mass,time,*scanrange =uid.split(',')
+        mass,time,*scanrange = uid.split(',')
         mass = float(mass)
         time = float(time)
         scanrange = ','.join(scanrange)
